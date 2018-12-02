@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <string.h>
 
 #define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
 #define T_BUFF 256
@@ -44,7 +45,7 @@ char * receiveFromServer(int socket, char *buffer, int n);
  * 
  */
 int main(int argc, char** argv) {
-    struct sockaddr_in sin = {0}; // adresse du serveur
+    struct sockaddr_in client_add, server_add; // adresse du serveur
     struct hostent *infos_server = NULL;
     int socket_client;
     const char *hostname = "localhost"; // nom du serveur
@@ -64,11 +65,11 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = infos_server.h_addr; /* l'adresse se trouve dans le champ h_addr de la structure infos_server */
-    sin.sin_port = htons(N_PORT);
+    client_add.sin_family = AF_INET;
+    client_add.sin_addr.s_addr = (struct sockaddr *) infos_server->h_addr; /* l'adresse se trouve dans le champ h_addr de la structure infos_server */
+    client_add.sin_port = htons(N_PORT);
 
-    if (connect(socket_client, (struct sockaddr *) & sin, sizeof (sin)) == -1) {
+    if (connect(socket_client, (struct sockaddr *) & server_add, sizeof (server_add)) == -1) {
         perror("connect");
         exit(-1);
     }
@@ -78,6 +79,8 @@ int main(int argc, char** argv) {
     buffer[n] = '\0';
     printf("Reception de %s", buffer);
     close(socket_client);
+
+    
     return (EXIT_SUCCESS);
 }
 
@@ -89,7 +92,7 @@ void sendToServer(int socket, char *buffer) {
 }
 
 char * receiveFromServer(int socket, char *buffer, int n) {
-    if ((n = recv(socket, buffer, sizeof buffer - 1, 0)) == -1 0) {
+    if ((n = recv(socket, buffer, sizeof buffer - 1, 0)) == -1) {
         perror("recv()");
         exit(-1);
         return buffer;
