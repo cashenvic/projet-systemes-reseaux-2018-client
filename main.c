@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   main.c
  * Author: cash
  *
@@ -20,8 +20,10 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <netdb.h>
-#include <string.h>
-
+#include <dirent.h>
+#include<string.h>
+#include <time.h>
+#include <sys/stat.h>
 #define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
 #define T_BUFF 256
 
@@ -41,8 +43,16 @@ void sendToServer(int socket, char *buffer);
  *  @return char * : Retourne la valeur reçue et lue sous forme de tableau de caractères
  **/
 char * receiveFromServer(int socket, char *buffer, int n);
+
+
+/** @brief affichage de la liste des fichiers dans le répértoire courant
+ *  @param
+ *  @return char*
+ **/
+char* lister_image();
+
 /*
- * 
+ *
  */
 int main(int argc, char** argv) {
     struct sockaddr_in client_add, server_add; // adresse du serveur
@@ -50,7 +60,7 @@ int main(int argc, char** argv) {
     int socket_client;
     const char *hostname = "localhost"; // nom du serveur
     char buffer[T_BUFF];
-    int n = 0; // temoin pour la lecture avec le buffer
+   // int n = 0; // temoin pour la lecture avec le buffer
 
     socket_client = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_client == -1) {
@@ -66,35 +76,90 @@ int main(int argc, char** argv) {
     }
 
     client_add.sin_family = AF_INET;
-    client_add.sin_addr.s_addr = (struct sockaddr *) infos_server->h_addr; /* l'adresse se trouve dans le champ h_addr de la structure infos_server */
+    memcpy(&(client_add.sin_addr.s_addr),infos_server->h_addr,sizeof(u_long)); /* l'adresse se trouve dans le champ h_addr de la structure infos_server */
     client_add.sin_port = htons(N_PORT);
 
-    if (connect(socket_client, (struct sockaddr *) & server_add, sizeof (server_add)) == -1) {
+
+    if (connect(socket_client, (struct sockaddr *) & client_add, sizeof (client_add)) == -1) {
         perror("connect");
         exit(-1);
     }
 
-    sendToServer(socket_client, buffer);
-    
-    buffer[n] = '\0';
-    printf("Reception de %s", buffer);
+
+    read(socket_client,buffer,T_BUFF);
+    printf("Reception du message : %s",buffer);
     close(socket_client);
 
-    
+     //affichage de la liste des fichiers dans le répértoire courant
+    printf("\n \n La liste des fichiers du répértoire courant est :");
+
+     char* tab_image[500] = {0};
+     int i=0;
+     *tab_image=lister_image();
+     while(tab_image[i]!=0)
+     {
+        printf("le nom du fichier est : %s",tab_image[i]);
+        i++;
+
+     }
+
+
+
+
     return (EXIT_SUCCESS);
 }
 
-void sendToServer(int socket, char *buffer) {
-    if (send(socket, buffer, strlen(buffer), 0) == -1) {
+void sendToServer(int socket, char *buffer)
+{
+    if (send(socket, buffer,sizeof(buffer), 0) == -1)
+    {
         perror("send");
         exit(-1);
     }
 }
 
 char * receiveFromServer(int socket, char *buffer, int n) {
-    if ((n = recv(socket, buffer, sizeof buffer - 1, 0)) == -1) {
+    if ((n = recv(socket, buffer, sizeof (buffer) - 1, 0)) == -1) {
         perror("recv()");
         exit(-1);
         return buffer;
     }
+}
+
+char* lister_image()
+{
+    char* tab_images[500];
+    int i=0;
+    struct dirent *lecture;
+    DIR *reponse;
+    reponse = opendir("." );
+    if (reponse != NULL)
+    {
+        while ((lecture = readdir(reponse)))
+        {
+
+
+            struct stat st;
+
+            stat (lecture->d_name, &st);
+            {
+            /* date de modification des fichiers */
+            time_t t = st.st_mtime;
+            struct tm tm = *localtime (&t);
+            char s[32];
+            strftime (s, sizeof s, "%d/%m/%Y %H:%M:%S", &tm);
+
+           // printf ("\n %-14s %s\n", lecture->d_name, s);
+            tab_images[i]=lecture->d_name;
+            i++;
+
+            }
+        }
+        closedir (reponse), reponse = NULL;
+
+
+
+    }
+    return *tab_images;
+
 }
