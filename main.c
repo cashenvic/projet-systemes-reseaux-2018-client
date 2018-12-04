@@ -90,21 +90,23 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    //read(socket_client, buffer, T_BUFF);
-    printf("Reception du message : %s", buffer);
-    //close(socket_client);
+    /*
+        //read(socket_client, buffer, T_BUFF);
+        printf("Reception du message : %s\n", buffer);
+        //close(socket_client);
 
-    //affichage de la liste des fichiers dans le répértoire courant
-    printf("\n \n La liste des fichiers du répértoire courant est :");
+        //affichage de la liste des fichiers dans le répértoire courant
+        printf("\n \n La liste des fichiers du répértoire courant est: \n");
 
-    char* tab_image[500] = {0};
-    int i = 0;
-    *tab_image = lister_image();
-    while (tab_image[i] != 0) {
-        printf("le nom du fichier est : %s", tab_image[i]);
-        i++;
+        char* tab_image[500] = {0};
+        int i = 0;
+     *tab_image = lister_image();
+        while (tab_image[i] != 0) {
+            printf("le nom du fichier est : %s\n", tab_image[i]);
+            i++;
 
-    }
+        }
+     */
     /*
         strcpy(buffer, "Coucou serveur");
         printf("Connexion etablie\n");
@@ -175,10 +177,13 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer) {
         perror("fopen");
         exit(-1);
     }
+    printf("successfull opening of file %s\n", cheminFichier);
 
     while ((ch = fgetc(fichier)) != EOF) {
         strcat(buffer, &ch);
-        if ((i == T_BUFF - 1) || ch == EOF) {
+        printf("%d\n", i);
+        if ((i == T_BUFF - 1)) {
+            printf("Ok j'envoie tout ça\n");
             sendToServer(socket, buffer);
             i = 0;
             strcpy(buffer, "");
@@ -186,11 +191,12 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer) {
         }
         i++;
     }
-
-    /*while (read(fichier, buffer, strlen(buffer))) {
-        printf("%s", buffer);
-        //write(socket_server, buffer, strlen(buffer);
-    }*/
+    if (buffer != "") {
+        printf("Ok j'envoie tout ça\n");
+        sendToServer(socket, buffer);
+        strcpy(buffer, "");
+    }
+    
     fclose(fichier);
 
     //ecrire dans la socket serveur
