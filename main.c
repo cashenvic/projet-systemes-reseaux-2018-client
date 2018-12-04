@@ -53,13 +53,18 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer);
 
 /** @brief Affiche la liste des fichiers dans le répértoire courant
  *  @param 
- *  @return char*
+ *  @return void
  **/
-char* lister_image();
+char lister_image();
 
-/*
- * 
- */
+/* @brief Création d'un fichier au niveau du client
+ * @param 
+ * @return void
+**/
+
+void create_fichier();
+
+
 int main(int argc, char** argv) {
     struct sockaddr_in client_add, server_add = {0}; // adresse du serveur
     struct hostent *infos_server = NULL;
@@ -90,23 +95,29 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    /*
         //read(socket_client, buffer, T_BUFF);
         printf("Reception du message : %s\n", buffer);
         //close(socket_client);
+	
+	// création d'un fichier
+       create_fichier();
 
         //affichage de la liste des fichiers dans le répértoire courant
         printf("\n \n La liste des fichiers du répértoire courant est: \n");
 
-        char* tab_image[500] = {0};
+
+
+	
+      char tab[50][50] = {0};
         int i = 0;
-     *tab_image = lister_image();
-        while (tab_image[i] != 0) {
-            printf("le nom du fichier est : %s\n", tab_image[i]);
+	tab[50][50] =lister_image();
+
+        while (tab[i][50] != 0) {
+	
+            printf("le nom du fichier est : %d\n", tab[i][50]);
             i++;
 
         }
-     */
     /*
         strcpy(buffer, "Coucou serveur");
         printf("Connexion etablie\n");
@@ -138,13 +149,19 @@ char * receiveFromServer(int socket, char *buffer, int n) {
     }
 }
 
-char* lister_image() {
-    char* tab_images[500];
+char lister_image(){
+     
+      
+    //tab_images=NULL;
+	char tab[50][50];
+   
     int i = 0;
     struct dirent *lecture;
     DIR *reponse;
     reponse = opendir(".");
-    if (reponse != NULL) {
+    if (reponse != NULL) 
+    {
+	//tab_images=(char**)malloc(50*sizeof(char));
         while ((lecture = readdir(reponse))) {
             struct stat st;
 
@@ -156,15 +173,34 @@ char* lister_image() {
                 char s[32];
                 strftime(s, sizeof s, "%d/%m/%Y %H:%M:%S", &tm);
 
-                // printf ("\n %-14s %s\n", lecture->d_name, s);
-                tab_images[i] = lecture->d_name;
+                   printf ("\n %-14s %s\n", lecture->d_name, s);
+                tab[i][50] = lecture->d_name;
                 i++;
 
             }
         }
         closedir(reponse), reponse = NULL;
     }
-    return *tab_images;
+    return tab;
+}
+
+
+void create_fichier()
+{
+    FILE * fPtr = NULL;
+    fPtr = fopen("./images/file.txt", "w");
+
+    /* fopen() return NULL if last operation was unsuccessful */
+    if(fPtr == NULL)
+    {
+        /* File not created hence exit */
+        printf("Unable to create file.\n");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+
 }
 
 void envoiFichier(int socket, char *cheminFichier, char *buffer) {
