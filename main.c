@@ -27,6 +27,10 @@
 #define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
 #define T_BUFF 1024
 
+typedef struct {
+    char info[24];
+} chemin_de_fichier; 
+
 //_(°_°)_Tous les prototypes devront finir dans des fichiers headers (*.h)
 
 /** @brief Envoi d'une demande de connexion vers le serveur
@@ -63,7 +67,7 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer);
  *  @param 
  *  @return char*
  **/
-char* lister_image();
+void lister_image(chemin_de_fichier tab[10], int *taille);
 
 /** @brief Permet la saisie des choix client en controlant les limites
  *  @param char message: message à afficher pour inviter à la saisie
@@ -76,14 +80,19 @@ int saisir(char message[], int nbr_choix);
  **/
 int menu_client();
 
+/** 
+ *  
+ */
 
 int main(int argc, char** argv) {
     struct sockaddr_in client_add, server_add = {0}; // adresse du serveur
     struct hostent *infos_server = NULL;
     int socket_client;
-    const char *hostname = "localhost"; // nom du serveur
-    char buffer[T_BUFF];
     int n = 0, choix = 0; // temoin pour la lecture avec le buffer
+    int i = 0, taille_liste_fichier;
+    chemin_de_fichier tab[20];
+    char buffer[T_BUFF];
+    const char *hostname = "localhost"; // nom du serveur
 
     socket_client = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_client == -1) {
@@ -109,15 +118,17 @@ int main(int argc, char** argv) {
 
     choix = menu_client();    
     write(socket_client, &choix, sizeof (int));
-    if (choix == 1) {
+    if (choix == 2) {
         printf("envoi d'un fichier\n");
-        envoiFichier(socket_client, "2018-web.pdf", buffer);
-    } else if (choix == 2) {
+        lister_image(tab, &taille_liste_fichier);
+        //prompt choisir le ou les fichiers à envoyer
+        //envoiFichier(socket_client, "2018-web.pdf", buffer);
+    } else if (choix == 1) {
         printf("en attente d'un fichier\n");
         receptionFichier(socket_client, buffer);
-    } else {
-        //envoi code d'ereur??
     }
+
+    
 
     close(socket_client);
 
@@ -164,16 +175,18 @@ char * receiveFromServer(int socket, char *buffer, int n) {
     }
 }
 
-char* lister_image() {
-    char* tab_images[500];
+void lister_image(chemin_de_fichier tab[10], int *taille) {
+
     int i = 0;
     struct dirent *lecture;
     DIR *reponse;
-    reponse = opendir(".");
+    reponse = opendir("./images");
     if (reponse != NULL) {
+        printf("\n \nListe des fichiers du repertoire d'image: \n");
         while ((lecture = readdir(reponse))) {
             struct stat st;
 
+            strcpy(tab[i].info, lecture->d_name);
             stat(lecture->d_name, &st);
             {
                 /* date de modification des fichiers */
@@ -182,14 +195,13 @@ char* lister_image() {
                 char s[32];
                 strftime(s, sizeof s, "%d/%m/%Y %H:%M:%S", &tm);
 
-                // printf ("\n %-14s %s\n", lecture->d_name, s);
-                tab_images[i] = lecture->d_name;
-                i++;
+                printf("\n%d- %-14s     %s\n", i, lecture->d_name, s);
             }
+            i++;
         }
+        *taille = i;
         closedir(reponse), reponse = NULL;
     }
-    return *tab_images;
 }
 
 void envoiFichier(int socket, char *cheminFichier, char *buffer) {
