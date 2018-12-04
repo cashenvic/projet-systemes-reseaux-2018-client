@@ -191,7 +191,7 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer) {
         }
         i++;
     }
-    if (buffer != "") {
+    if (strcmp(buffer, "") != 0) {
         printf("Ok j'envoie tout ça\n");
         sendToServer(socket, buffer);
         strcpy(buffer, "");
