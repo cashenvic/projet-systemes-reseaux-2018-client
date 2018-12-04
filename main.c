@@ -65,9 +65,18 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer);
  **/
 char* lister_image();
 
-/*
- * 
- */
+/** @brief Permet la saisie des choix client en controlant les limites
+ *  @param char message: message à afficher pour inviter à la saisie
+ *  @return int: le choix saisi par le client
+ **/
+int saisir(char message[], int nbr_choix);
+
+/** @brief Affiche le menu au client afin qu'il choisisse ce qu'il veut faire
+ *  @return int : Retourne la saisie du client
+ **/
+int menu_client();
+
+
 int main(int argc, char** argv) {
     struct sockaddr_in client_add, server_add = {0}; // adresse du serveur
     struct hostent *infos_server = NULL;
@@ -98,39 +107,12 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    /*
-    //read(socket_client, buffer, T_BUFF);
-    printf("Reception du message : %s\n", buffer);
-    //close(socket_client);
-
-    //affichage de la liste des fichiers dans le répértoire courant
-    printf("\n \n La liste des fichiers du répértoire courant est: \n");
-
-    char* tab_image[500] = {0};
-    int i = 0;
-     *tab_image = lister_image();
-    while (tab_image[i] != 0) {
-        printf("le nom du fichier est : %s\n", tab_image[i]);
-        i++;
-
-    }
-     */
-    /*
-        strcpy(buffer, "Coucou serveur");
-        printf("Connexion etablie\n");
-        //buffer[n] = '\0';
-        printf("Envoi de %s", buffer);
-        sendToServer(socket_client, buffer);
-     */
-    //write(server_add)
-
-    choix = 2;
-    printf("Choix %d\n", choix);
+    choix = menu_client();    
     write(socket_client, &choix, sizeof (int));
     if (choix == 1) {
         printf("envoi d'un fichier\n");
         envoiFichier(socket_client, "2018-web.pdf", buffer);
-    } else if (n == 2) {
+    } else if (choix == 2) {
         printf("en attente d'un fichier\n");
         receptionFichier(socket_client, buffer);
     } else {
@@ -140,6 +122,30 @@ int main(int argc, char** argv) {
     close(socket_client);
 
     return (EXIT_SUCCESS);
+}
+
+//https://www.developpez.net/forums/d967275/general-developpement/programmation-systeme/linux/securiser-saisie-c-scanf/
+int saisir(char message[], int nbr_choix) {
+    int choix = -1;
+
+    do {
+        printf("\n--%s \n---> : ", message);
+        scanf("%d", &choix);
+        if (choix < 0 || choix > nbr_choix) {
+            printf("Choix indisponible. Merci de choisir entre 0 et %d", nbr_choix);
+        }
+    } while (choix < 0 || choix > nbr_choix);
+
+    return choix;
+}
+
+int menu_client() {
+    int nbr_max_choix = 2;
+    char message[] = "\nQue voulez-vous faire? Tapez 0 pour quitter :";
+    printf("             **********Menu Client************\n");
+    printf("   1. Telecharger fichier(s) image.\n");
+    printf("   2. Televerser (Upload) fichier(s) image. \n");
+    return saisir(message, nbr_max_choix);
 }
 
 void sendToServer(int socket, char *buffer) {
