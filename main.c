@@ -44,6 +44,14 @@ void sendToServer(int socket, char *buffer);
  **/
 char * receiveFromServer(int socket, char *buffer, int n);
 
+/** @brief Reception des données reçues du serveur
+ *  @param int socket : socket (descripteur de fichier) du client qui fait la requete
+ *  @param char *buffer : buffer (tableau de caractères) qui contient les données reçues.
+ *  @param int c: Etat de la lecture du buffer
+ *  @return char * : Retourne la valeur reçue et lue sous forme de tableau de caractères
+ **/
+void receptionFichier(int socket, char *buffer);
+
 /** @brief Lis un fichier depuis le repertoire du client et l'envoie au serveur
  *  @param int socket : socket dans lequel il ecrit
  *  @param char *cheminFichier : chemin du fichier à lire
@@ -66,7 +74,7 @@ int main(int argc, char** argv) {
     int socket_client;
     const char *hostname = "localhost"; // nom du serveur
     char buffer[T_BUFF];
-    int n = 0; // temoin pour la lecture avec le buffer
+    int n = 0, choix = 0; // temoin pour la lecture avec le buffer
 
     socket_client = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_client == -1) {
@@ -91,21 +99,21 @@ int main(int argc, char** argv) {
     }
 
     /*
-        //read(socket_client, buffer, T_BUFF);
-        printf("Reception du message : %s\n", buffer);
-        //close(socket_client);
+    //read(socket_client, buffer, T_BUFF);
+    printf("Reception du message : %s\n", buffer);
+    //close(socket_client);
 
-        //affichage de la liste des fichiers dans le répértoire courant
-        printf("\n \n La liste des fichiers du répértoire courant est: \n");
+    //affichage de la liste des fichiers dans le répértoire courant
+    printf("\n \n La liste des fichiers du répértoire courant est: \n");
 
-        char* tab_image[500] = {0};
-        int i = 0;
+    char* tab_image[500] = {0};
+    int i = 0;
      *tab_image = lister_image();
-        while (tab_image[i] != 0) {
-            printf("le nom du fichier est : %s\n", tab_image[i]);
-            i++;
+    while (tab_image[i] != 0) {
+        printf("le nom du fichier est : %s\n", tab_image[i]);
+        i++;
 
-        }
+    }
      */
     /*
         strcpy(buffer, "Coucou serveur");
@@ -116,7 +124,18 @@ int main(int argc, char** argv) {
      */
     //write(server_add)
 
-    envoiFichier(socket_client, "2018-web.pdf", buffer);
+    choix = 2;
+    printf("Choix %d\n", choix);
+    write(socket_client, &choix, sizeof (int));
+    if (choix == 1) {
+        printf("envoi d'un fichier\n");
+        envoiFichier(socket_client, "2018-web.pdf", buffer);
+    } else if (n == 2) {
+        printf("en attente d'un fichier\n");
+        receptionFichier(socket_client, buffer);
+    } else {
+        //envoi code d'ereur??
+    }
 
     close(socket_client);
 
@@ -131,6 +150,7 @@ void sendToServer(int socket, char *buffer) {
 }
 
 char * receiveFromServer(int socket, char *buffer, int n) {
+    char received[256];
     if ((n = recv(socket, buffer, sizeof buffer - 1, 0)) == -1) {
         perror("recv()");
         exit(-1);
@@ -159,7 +179,6 @@ char* lister_image() {
                 // printf ("\n %-14s %s\n", lecture->d_name, s);
                 tab_images[i] = lecture->d_name;
                 i++;
-
             }
         }
         closedir(reponse), reponse = NULL;
@@ -200,4 +219,14 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer) {
     fclose(fichier);
 
     //ecrire dans la socket serveur
+}
+
+void receptionFichier(int socket, char *buffer) {
+    char* recu;
+    while (read(socket, buffer, T_BUFF)) {
+        //strcat(recu, &buffer);
+        //printf("Reçu: rw%s", recu);
+        printf("Reçu: b%s", buffer);
+    }
+    //printf("Reçu r: %s", recu);
 }
