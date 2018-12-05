@@ -27,9 +27,21 @@
 #define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
 #define T_BUFF 1024
 
+/** @brief Respresente un fichier dans le listing des fichiers d'un repertoire
+ *  @struct
+ **/
 typedef struct {
-    char info[24];
-} chemin_de_fichier; 
+    char info[256];
+    int taille;
+} chemin_de_fichier;
+
+/** @brief Represente une image avec le nom et le contenu du fichier
+ *  @struct
+ **/
+typedef struct {
+    char nom_fichier[256];
+    char contenu_fichier[1000];
+} image;
 
 //_(°_°)_Tous les prototypes devront finir dans des fichiers headers (*.h)
 
@@ -71,6 +83,7 @@ void lister_image(chemin_de_fichier tab[10], int *taille);
 
 /** @brief Permet la saisie des choix client en controlant les limites
  *  @param char message: message à afficher pour inviter à la saisie
+ *  @param int nbr_choix: quantité maximale autorisé de choix
  *  @return int: le choix saisi par le client
  **/
 int saisir(char message[], int nbr_choix);
@@ -80,6 +93,33 @@ int saisir(char message[], int nbr_choix);
  **/
 int menu_client();
 
+/** @brief Ouvre un fichier selon le mode selectionné et gère les erreurs d'ouverture
+ *  @param char *cheminFichier: chemin du fichier à ouvrir
+ *  @param char* mode: mode d'ouverture du fichier
+ *  @return FILE: Retourne le fichier qu'il ouvert
+ **/
+FILE* ouvrirFichier(char *cheminFichier, char* mode);
+
+/** @brief Conversion struct -> char*; char* -> struct
+ *  @param char *cheminFichier: chemin du fichier à ouvrir
+ *  @param char* mode: mode d'ouverture du fichier
+ *  @return FILE: Retourne le fichier qu'il ouvert
+ **/
+void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille, int choix);
+
+/** @brief contruit une chaine avec le nom de fichier et son contenu
+ *  @param char p2[]: chaine finale retournée
+ *  @param image tab [10]: structure image à serialiser
+ *  @param int taille: taille de tab
+ **/
+void chaine_structure_Contenu(char chaine[], image images[10], int nbImg);
+
+/** @brief Lis le contenu d'image et l'associe à son nom
+ *  @param char *cheminFichier: chemin du fichier à lire
+ *  @param char *buffer: contenu lu
+ **/
+void convertir_image(char *cheminFichier, char *buffer);
+
 /** 
  *  
  */
@@ -88,9 +128,12 @@ int main(int argc, char** argv) {
     struct sockaddr_in client_add, server_add = {0}; // adresse du serveur
     struct hostent *infos_server = NULL;
     int socket_client;
-    int n = 0, choix = 0; // temoin pour la lecture avec le buffer
+    int n = 0, choix = -1, nbre_images; // temoin pour la lecture avec le buffer
     int i = 0, taille_liste_fichier;
-    chemin_de_fichier tab[20];
+    chemin_de_fichier chemins_images[20];
+    chemin_de_fichier chemins_img_choisis[20]; //allocation dynamique plus bas si on connait le nombre d'image
+    image images[20]; //allocation dynamique plus bas si on connait le nombre d'image
+    char ch_to_send[40 * N_PORT];
     char buffer[T_BUFF];
     const char *hostname = "localhost"; // nom du serveur
 
@@ -116,13 +159,41 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    choix = menu_client();    
-    write(socket_client, &choix, sizeof (int));
+    choix = menu_client();
+    //write(socket_client, &choix, sizeof (int));
+    sendToServer(socket_client, &choix);
     if (choix == 2) {
+        choix = -1;
         printf("envoi d'un fichier\n");
-        lister_image(tab, &taille_liste_fichier);
-        //prompt choisir le ou les fichiers à envoyer
-        //envoiFichier(socket_client, "2018-web.pdf", buffer);
+        i = 0;
+        lister_image(chemins_images, &taille_liste_fichier);
+        //prompt choisir le nombre de fichiers à envoyer
+        nbre_images = saisir("Combien d'images voulez-vous envoyer", taille_liste_fichier);
+        printf("Choix de %d images\n", nbre_images);
+        choix = -1;
+        //prompt choix du/des fichier(s) à envoyer
+        i = 0;
+        while (i < nbre_images) {
+            printf("\nImage n°%d\n", i + 1);
+            choix = saisir("Choisissez le fichier", taille_liste_fichier);
+            printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
+            //construire un tableau avec les noms de fichier choisis
+            strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
+            i++;
+        }
+        i = 0;
+        while (i < nbre_images) {
+            convertir_image(chemins_img_choisis[i].info, ch_to_send);
+            strcpy(images[i].nom_fichier, chemins_img_choisis[i].info);
+            printf("nom image : %s\n", images[i].nom_fichier);
+            strcpy(images[i].contenu_fichier, ch_to_send);
+            i++;
+        }
+        strcpy(ch_to_send, "");
+        chaine_structure_Contenu(ch_to_send, images, nbre_images);
+        envoiFichier(socket_client, ch_to_send, buffer);
+        printf("fichier à send: %s", ch_to_send);
+        sendToServer(socket_client, ch_to_send);
     } else if (choix == 1) {
         printf("en attente d'un fichier\n");
         receptionFichier(socket_client, buffer);
@@ -180,13 +251,20 @@ void lister_image(chemin_de_fichier tab[10], int *taille) {
     int i = 0;
     struct dirent *lecture;
     DIR *reponse;
-    reponse = opendir("./images");
+    reponse = opendir(".");
     if (reponse != NULL) {
         printf("\n \nListe des fichiers du repertoire d'image: \n");
         while ((lecture = readdir(reponse))) {
+
+            /*
+                if ((strcmp(lecture->d_name, ".") == 0) || (strcmp(lecture->d_name, "..") == 0)) {
+                    //printf("\n%d- %-14s     %s\n", i, lecture->d_name, s);
+                    strcpy(tab[i].info, lecture->d_name);
+                }
+             */
+            strcpy(tab[i].info, lecture->d_name);
             struct stat st;
 
-            strcpy(tab[i].info, lecture->d_name);
             stat(lecture->d_name, &st);
             {
                 /* date de modification des fichiers */
@@ -194,47 +272,32 @@ void lister_image(chemin_de_fichier tab[10], int *taille) {
                 struct tm tm = *localtime(&t);
                 char s[32];
                 strftime(s, sizeof s, "%d/%m/%Y %H:%M:%S", &tm);
-
-                printf("\n%d- %-14s     %s\n", i, lecture->d_name, s);
             }
             i++;
         }
         *taille = i;
+        i = 0;
         closedir(reponse), reponse = NULL;
+        while (i < *taille) {
+            printf("\n%d- %s \n", i, tab[i].info);
+            i++;
+        }
     }
 }
 
-void envoiFichier(int socket, char *cheminFichier, char *buffer) {
-    //lis le fichier à partir du rep client
+FILE* ouvrirFichier(char *cheminFichier, char* mode) {
     FILE *fichier;
-    char ch;
-    int i = 0;
 
-    if ((fichier = fopen(cheminFichier, "r")) == NULL) {
+    if ((fichier = fopen(cheminFichier, mode)) == NULL) {
         perror("fopen");
         exit(-1);
     }
     printf("successfull opening of file %s\n", cheminFichier);
+    return fichier;
+}
 
-    while ((ch = fgetc(fichier)) != EOF) {
-        strcat(buffer, &ch);
-        printf("%d\n", i);
-        if ((i == T_BUFF - 1)) {
-            printf("Ok j'envoie tout ça\n");
-            sendToServer(socket, buffer);
-            i = 0;
-            strcpy(buffer, "");
-            //strcat(buffer, &ch);
-        }
-        i++;
-    }
-    if (strcmp(buffer, "") != 0) {
-        printf("Ok j'envoie tout ça\n");
-        sendToServer(socket, buffer);
-        strcpy(buffer, "");
-    }
-    
-    fclose(fichier);
+void envoiFichier(int socket, char *cheminFichier, char *buffer) {
+    sendToServer(socket, buffer);
 
     //ecrire dans la socket serveur
 }
@@ -247,4 +310,57 @@ void receptionFichier(int socket, char *buffer) {
         printf("Reçu: b%s", buffer);
     }
     //printf("Reçu r: %s", recu);
+}
+
+void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille, int choix) {
+    int i = 0;
+    char str[10];
+    switch (choix) {
+        case 1: /*Choix de Structure vers Chaine de caractere*/
+
+            for (i; i < taille; i++) {
+                sprintf(str, "%d", i);
+                strcat(p2, str);
+                strcat(p2, "|");
+                strcat(p2, tab[i].info);
+                if (i < taille - 1)
+                    strcat(p2, ":");
+            }
+            break;
+        case 2: /*Choix de chaine de caractaire vers Structure*/
+
+            break;
+        default: printf("--erreur de choix !!\n");
+            break;
+    }
+}
+
+void chaine_structure_Contenu(char chaine[], image images[10], int nbImg) {
+    int i = 0;
+    printf("On est bien dans chaine structure\n");
+    for (i; i < nbImg; i++) {
+        strcat(chaine, images[i].nom_fichier);
+        printf("nom image dans structure: %s\n", images[i].nom_fichier);
+        strcat(chaine, ":");
+        strcat(chaine, images[i].contenu_fichier);
+        if (i < nbImg - 1)
+            strcat(chaine, ":");
+    }
+}
+
+void convertir_image(char *cheminFichier, char *buffer) {
+    FILE *fichier;
+    char ch;
+    int i = 0;
+    printf("chemin %s\n", cheminFichier);
+    if ((fichier = fopen(cheminFichier, "r")) == NULL) {
+        perror("fopen");
+        exit(-1);
+    }
+    printf("successfull opening of file %s\n", cheminFichier);
+
+    while ((ch = fgetc(fichier)) != EOF) {
+        strcat(buffer, &ch);
+    }
+    fclose(fichier);
 }
