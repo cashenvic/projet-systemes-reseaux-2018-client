@@ -79,7 +79,7 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer);
  *  @param 
  *  @return char*
  **/
-void lister_image(chemin_de_fichier tab[10], int *taille);
+void lister_image(char *repertoire, chemin_de_fichier tab[10], int *taille);
 
 /** @brief Permet la saisie des choix client en controlant les limites
  *  @param char message: message à afficher pour inviter à la saisie
@@ -160,13 +160,13 @@ int main(int argc, char** argv) {
     }
 
     choix = menu_client();
-    //write(socket_client, &choix, sizeof (int));
-    sendToServer(socket_client, &choix);
+    write(socket_client, &choix, sizeof (int));
+    //sendToServer(socket_client, &choix);
     if (choix == 2) {
         choix = -1;
         printf("envoi d'un fichier\n");
         i = 0;
-        lister_image(chemins_images, &taille_liste_fichier);
+        lister_image("./images/", chemins_images, &taille_liste_fichier);
         //prompt choisir le nombre de fichiers à envoyer
         nbre_images = saisir("Combien d'images voulez-vous envoyer", taille_liste_fichier);
         printf("Choix de %d images\n", nbre_images);
@@ -191,16 +191,13 @@ int main(int argc, char** argv) {
         }
         strcpy(ch_to_send, "");
         chaine_structure_Contenu(ch_to_send, images, nbre_images);
-        envoiFichier(socket_client, ch_to_send, buffer);
-        printf("fichier à send: %s", ch_to_send);
+        //envoiFichier(socket_client, ch_to_send, buffer);
+        printf("fichier envoyé: %s", ch_to_send);
         sendToServer(socket_client, ch_to_send);
     } else if (choix == 1) {
         printf("en attente d'un fichier\n");
         receptionFichier(socket_client, buffer);
     }
-
-    
-
     close(socket_client);
 
     return (EXIT_SUCCESS);
@@ -209,10 +206,13 @@ int main(int argc, char** argv) {
 //https://www.developpez.net/forums/d967275/general-developpement/programmation-systeme/linux/securiser-saisie-c-scanf/
 int saisir(char message[], int nbr_choix) {
     int choix = -1;
+    char saisie[255];
 
     do {
         printf("\n--%s \n---> : ", message);
-        scanf("%d", &choix);
+        fgets(saisie, 255, stdin);
+        if (sscanf(saisie, "%d", &choix) == 1) break;
+        //scanf("%d", &choix);
         if (choix < 0 || choix > nbr_choix) {
             printf("Choix indisponible. Merci de choisir entre 0 et %d", nbr_choix);
         }
@@ -246,23 +246,19 @@ char * receiveFromServer(int socket, char *buffer, int n) {
     }
 }
 
-void lister_image(chemin_de_fichier tab[10], int *taille) {
+void lister_image(char *repertoire, chemin_de_fichier tab[10], int *taille) {
 
     int i = 0;
     struct dirent *lecture;
     DIR *reponse;
-    reponse = opendir(".");
+    reponse = opendir(repertoire);
     if (reponse != NULL) {
         printf("\n \nListe des fichiers du repertoire d'image: \n");
         while ((lecture = readdir(reponse))) {
-
-            /*
-                if ((strcmp(lecture->d_name, ".") == 0) || (strcmp(lecture->d_name, "..") == 0)) {
-                    //printf("\n%d- %-14s     %s\n", i, lecture->d_name, s);
-                    strcpy(tab[i].info, lecture->d_name);
-                }
-             */
-            strcpy(tab[i].info, lecture->d_name);
+            //Amelioration: essayer de pas tenir compte de .. et .
+            strcpy(tab[i].info, "");
+            strcat(tab[i].info, repertoire);
+            strcat(tab[i].info, lecture->d_name);
             struct stat st;
 
             stat(lecture->d_name, &st);
