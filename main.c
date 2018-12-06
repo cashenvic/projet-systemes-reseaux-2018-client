@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
     }
     hostname = argv[1];
     const int N_PORT = atoi(argv[2]);
-    
+    system("clear");
     socket_client = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_client == -1) {
         perror("socket_client");
@@ -193,7 +193,11 @@ int main(int argc, char** argv) {
             choix = saisir("Choisissez le fichier", taille_liste_fichier);
             printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
             //construire un tableau avec les noms de fichier choisis
-            strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
+            if ((strcmp(chemins_images[choix].info, ".") == 0)
+                    && (strcmp(chemins_images[choix].info, "..") == 0)) {
+                printf("Ce choix n'est pas vaalide");
+            } else
+                strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
             i++;
         }
         i = 0;
@@ -212,6 +216,7 @@ int main(int argc, char** argv) {
         printf("en attente d'un fichier\n");
         receptionFichier(socket_client, buffer);
     }
+    write(socket_client, &choix, sizeof (int));
     close(socket_client);
 
     return (EXIT_SUCCESS);
@@ -347,7 +352,6 @@ void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille
 
 void chaine_structure_Contenu(char chaine[], image images[10], int nbImg) {
     int i = 0;
-    printf("On est bien dans chaine structure\n");
     for (i; i < nbImg; i++) {
         strcat(chaine, images[i].nom_fichier);
         printf("nom image dans structure: %s\n", images[i].nom_fichier);
@@ -360,13 +364,13 @@ void chaine_structure_Contenu(char chaine[], image images[10], int nbImg) {
 
 void convertir_image(char *cheminFichier, char *buffer) {
     FILE *fichier;
-    char ch;
+    char ch[478325];
     int i = 0;
     char repertoire[256];
     strcpy(repertoire, "");
     strcat(repertoire, "./images/");
     strcat(repertoire, cheminFichier);
-
+    printf("Le chemin à lire %s", repertoire);
     if ((fichier = fopen(repertoire, "rb")) == NULL) {
         perror("fopen");
         exit(-1);
@@ -374,18 +378,33 @@ void convertir_image(char *cheminFichier, char *buffer) {
     printf("successfull opening of file %s\n", cheminFichier);
     fseek(fichier, 0, SEEK_END);
     unsigned long taille_img = ftell(fichier);
-    //buffer = (long*) malloc(taille_img * sizeof (long));
+    printf("taille du buffer %lu\n", taille_img);
+    fseek(fichier, 0, SEEK_SET);
 
     char buff[taille_img];
     fseek(fichier, 0, SEEK_SET);
-    if (fread(buff, sizeof (buff), 1024, fichier) != taille_img) {
-        perror("fread");
+    fread(buff, sizeof (buff), 1, fichier);
+    i = 0;
+    while (i < taille_img) {
+        printf("%c", buff[i]);
+            i++;
     }
-    printf("buffer %s\n", buff);
     /*
-        while ((ch = fgetc(fichier)) != EOF) {
-            strcat(buffer, &ch);
-        }
+
+        if (fread(buff, sizeof (buff), taille_img, fichier)) {
+            perror("fread");
+       }
+     * 
+    /*
+    }
      */
+/*
+            printf("buffer %s\n", buff);
+        buffer = (long*) malloc(taille_img * sizeof (long));
+        strcpy(buffer, "");
+        //while (fgets(buffer, taille_img, fichier) != NULL);
+        printf("buffer %s\n", buffer);
+     */
+    printf("%lu\n", taille_img);
     fclose(fichier);
 }
