@@ -24,8 +24,11 @@
 #include <dirent.h>
 #include <string.h>
 #include <time.h>
+#include <setjmp.h>
+
+
 #define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
-#define T_BUFF 1024
+#define T_BUFF 1000*1024
 
 /** @brief Respresente un fichier dans le listing des fichiers d'un repertoire
  *  @struct
@@ -185,7 +188,6 @@ int main(int argc, char** argv) {
         while (i < nbre_images) {
             convertir_image(chemins_img_choisis[i].info, ch_to_send);
             strcpy(images[i].nom_fichier, chemins_img_choisis[i].info);
-            printf("nom image : %s\n", images[i].nom_fichier);
             strcpy(images[i].contenu_fichier, ch_to_send);
             i++;
         }
@@ -257,7 +259,7 @@ void lister_image(char *repertoire, chemin_de_fichier tab[10], int *taille) {
         while ((lecture = readdir(reponse))) {
             //Amelioration: essayer de pas tenir compte de .. et .
             strcpy(tab[i].info, "");
-            strcat(tab[i].info, repertoire);
+            //strcat(tab[i].info, repertoire);
             strcat(tab[i].info, lecture->d_name);
             struct stat st;
 
@@ -348,15 +350,30 @@ void convertir_image(char *cheminFichier, char *buffer) {
     FILE *fichier;
     char ch;
     int i = 0;
-    printf("chemin %s\n", cheminFichier);
-    if ((fichier = fopen(cheminFichier, "r")) == NULL) {
+    char repertoire[256];
+    strcpy(repertoire, "");
+    strcat(repertoire, "./images/");
+    strcat(repertoire, cheminFichier);
+
+    if ((fichier = fopen(cheminFichier, "rb")) == NULL) {
         perror("fopen");
         exit(-1);
     }
     printf("successfull opening of file %s\n", cheminFichier);
+    fseek(fichier, 0, SEEK_END);
+    unsigned long taille_img = ftell(fichier);
+    //buffer = (long*) malloc(taille_img * sizeof (long));
 
-    while ((ch = fgetc(fichier)) != EOF) {
-        strcat(buffer, &ch);
+    char buff[taille_img];
+    fseek(fichier, 0, SEEK_SET);
+    if (fread(buff, sizeof (buff), 1024, fichier) != taille_img) {
+        perror("fread");
     }
+    printf("buffer %s\n", buff);
+    /*
+        while ((ch = fgetc(fichier)) != EOF) {
+            strcat(buffer, &ch);
+        }
+     */
     fclose(fichier);
 }
