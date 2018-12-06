@@ -27,7 +27,7 @@
 #include <setjmp.h>
 
 
-#define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
+//#define N_PORT 20000 //le meme numero de port que celui utilisé sur le serveur
 #define T_BUFF 1000*1024
 
 /** @brief Respresente un fichier dans le listing des fichiers d'un repertoire
@@ -123,6 +123,12 @@ void chaine_structure_Contenu(char chaine[], image images[10], int nbImg);
  **/
 void convertir_image(char *cheminFichier, char *buffer);
 
+void affiche_aide() {
+    printf("Usage: \nclient <nom du serveur> <numero port>\n");
+    printf("\tExemple: client 192.168.1.23 20000\n");
+    exit(-1);
+}
+
 /** 
  *  
  */
@@ -136,10 +142,16 @@ int main(int argc, char** argv) {
     chemin_de_fichier chemins_images[20];
     chemin_de_fichier chemins_img_choisis[20]; //allocation dynamique plus bas si on connait le nombre d'image
     image images[20]; //allocation dynamique plus bas si on connait le nombre d'image
-    char ch_to_send[40 * N_PORT];
+    char ch_to_send[800000];
     char buffer[T_BUFF];
     const char *hostname = "localhost"; // nom du serveur
 
+    if (argc != 3) {
+        affiche_aide();
+    }
+    hostname = argv[1];
+    const int N_PORT = atoi(argv[2]);
+    
     socket_client = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_client == -1) {
         perror("socket_client");
@@ -161,7 +173,7 @@ int main(int argc, char** argv) {
         perror("connect");
         exit(-1);
     }
-
+    
     choix = menu_client();
     write(socket_client, &choix, sizeof (int));
     //sendToServer(socket_client, &choix);
@@ -355,7 +367,7 @@ void convertir_image(char *cheminFichier, char *buffer) {
     strcat(repertoire, "./images/");
     strcat(repertoire, cheminFichier);
 
-    if ((fichier = fopen(cheminFichier, "rb")) == NULL) {
+    if ((fichier = fopen(repertoire, "rb")) == NULL) {
         perror("fopen");
         exit(-1);
     }
