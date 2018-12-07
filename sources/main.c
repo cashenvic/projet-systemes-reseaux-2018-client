@@ -40,51 +40,49 @@ int main(int argc, char** argv) {
         perror("connect");
         exit(-1);
     }
-    
-    choix = menu_client();
-    write(socket_client, &choix, sizeof (int));
-    //sendToServer(socket_client, &choix);
-    if (choix == 2) {
-        choix = -1;
-        printf("envoi d'un fichier\n");
-        i = 0;
-        lister_image("./images/", chemins_images, &taille_liste_fichier);
-        //prompt choisir le nombre de fichiers à envoyer
-        nbre_images = saisir("Combien d'images voulez-vous envoyer", taille_liste_fichier);
-        printf("Choix de %d images\n", nbre_images);
-        choix = -1;
-        //prompt choix du/des fichier(s) à envoyer
-        i = 0;
-        while (i < nbre_images) {
-            printf("\nImage n°%d\n", i + 1);
-            choix = saisir("Choisissez le fichier", taille_liste_fichier);
-            printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
-            //construire un tableau avec les noms de fichier choisis
-            if ((strcmp(chemins_images[choix].info, ".") == 0)
-                    || (strcmp(chemins_images[choix].info, "..") == 0)) {
-                printf("Ce choix n'est pas valide");
-            } else
-                strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
-            i++;
+    while (1) {
+        choix = menu_client();
+        write(socket_client, &choix, sizeof (int));
+        //sendToServer(socket_client, &choix);
+        if (choix == 2) {
+            choix = -1;
+            printf("envoi d'un fichier\n");
+            i = 0;
+            lister_image("./images/", chemins_images, &taille_liste_fichier);
+            //prompt choisir le nombre de fichiers à envoyer
+            nbre_images = saisir("Combien d'images voulez-vous envoyer", taille_liste_fichier);
+            printf("Choix de %d images\n", nbre_images);
+            choix = -1;
+            //prompt choix du/des fichier(s) à envoyer
+            i = 0;
+            while (i < nbre_images) {
+                printf("\nImage n°%d\n", i + 1);
+                choix = saisir("Choisissez le fichier", taille_liste_fichier);
+                printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
+                //construire un tableau avec les noms de fichier choisis
+                if ((strcmp(chemins_images[choix].info, ".") == 0)
+                        || (strcmp(chemins_images[choix].info, "..") == 0)) {
+                    printf("Ce choix n'est pas valide");
+                } else
+                    strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
+                i++;
+            }
+            i = 0;
+            //nombre de fichiers attendus coté serveur
+            write(socket_client, &nbre_images, sizeof (int));
+            while (i < nbre_images) {
+                convertir_image(socket_client, chemins_img_choisis[i].info, ch_to_send);
+                printf("%s a été envoyé\n\n", chemins_img_choisis[i].info);
+                i++;
+            }
+        } else if (choix == 1) {
+            printf("en attente d'un fichier\n");
+            receptionFichier(socket_client, buffer);
+        } else if (choix == 0) {
+            close(socket_client);
+            exit(EXIT_SUCCESS);
         }
-        i = 0;
-        //nombre de fichiers attendus coté serveur
-        write(socket_client, &nbre_images, sizeof (int));
-        while (i < nbre_images) {
-            convertir_image(socket_client, chemins_img_choisis[i].info, ch_to_send);
-            printf("%s a été envoyé\n\n", chemins_img_choisis[i].info);
-            i++;
-        }
-        //strcpy(ch_to_send, "");
-        //chaine_structure_Contenu(ch_to_send, images, nbre_images);
-        //envoiFichier(socket_client, ch_to_send, buffer);
-        //printf("fichier envoyé: %s", ch_to_send);
-        //sendToServer(socket_client, ch_to_send);
-    } else if (choix == 1) {
-        printf("en attente d'un fichier\n");
-        receptionFichier(socket_client, buffer);
     }
-    write(socket_client, &choix, sizeof (int));
     close(socket_client);
 
     return (EXIT_SUCCESS);
