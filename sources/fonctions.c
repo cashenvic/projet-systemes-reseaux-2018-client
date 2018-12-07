@@ -53,7 +53,10 @@ void lister_image(char *repertoire, chemin_de_fichier tab[10], int *taille) {
             //Amelioration: essayer de pas tenir compte de .. et .
             strcpy(tab[i].info, "");
             //strcat(tab[i].info, repertoire);
-            strcat(tab[i].info, lecture->d_name);
+            if ((strcmp(lecture->d_name, ".") != 0) && (strcmp(lecture->d_name, "..") != 0)) {
+                strcat(tab[i].info, lecture->d_name);
+            }
+
             struct stat st;
 
             stat(lecture->d_name, &st);

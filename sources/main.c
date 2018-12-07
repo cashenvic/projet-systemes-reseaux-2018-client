@@ -57,16 +57,19 @@ int main(int argc, char** argv) {
             i = 0;
             while (i < nbre_images) {
                 printf("\nImage n°%d\n", i + 1);
-                choix = saisir("Choisissez le fichier", taille_liste_fichier);
+                choix = saisir("Choisissez le fichier", taille_liste_fichier - 1);
                 printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
                 //construire un tableau avec les noms de fichier choisis
-                if ((strcmp(chemins_images[choix].info, ".") == 0)
-                        || (strcmp(chemins_images[choix].info, "..") == 0)) {
-                    printf("Ce choix n'est pas valide");
+                if ((strcmp(chemins_images[choix].info, ".") == 0) || (strcmp(chemins_images[choix].info, "..") == 0)) {
+                    printf("Choix d'image non valide. Le programme va quitter\n");
+                    choix = 0;
+                    //write(socket_client, &choix, sizeof (int));
+                    exit(0);
                 } else
                     strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
                 i++;
             }
+
             i = 0;
             //nombre de fichiers attendus coté serveur
             write(socket_client, &nbre_images, sizeof (int));
