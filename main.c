@@ -1,14 +1,10 @@
 #include "fonctions.h"
 
-/** 
- *  
- */
-
 int main(int argc, char** argv) {
-    struct sockaddr_in client_add, server_add = {0}; // adresse du serveur
+    struct sockaddr_in server_add = {0}; // adresse du serveur
     struct hostent *infos_server = NULL;
     int socket_client;
-    int n = 0, choix = -1, nbre_images; // temoin pour la lecture avec le buffer
+    int choix = -1, nbre_images; // temoin pour la lecture avec le buffer
     int i = 0, taille_liste_fichier;
     chemin_de_fichier chemins_images[20];
     chemin_de_fichier chemins_img_choisis[20]; //allocation dynamique plus bas si on connait le nombre d'image
@@ -66,13 +62,14 @@ int main(int argc, char** argv) {
             //construire un tableau avec les noms de fichier choisis
             if ((strcmp(chemins_images[choix].info, ".") == 0)
                     && (strcmp(chemins_images[choix].info, "..") == 0)) {
-                printf("Ce choix n'est pas vaalide");
+                printf("Ce choix n'est pas valide");
             } else
                 strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
             i++;
         }
         i = 0;
         while (i < nbre_images) {
+            printf("Main:-->++++Le chemin du fichier %s", chemins_img_choisis[i].info);
             convertir_image(socket_client, chemins_img_choisis[i].info, ch_to_send);
             strcpy(images[i].nom_fichier, chemins_img_choisis[i].info);
             strcpy(images[i].contenu_fichier, ch_to_send);
@@ -92,4 +89,6 @@ int main(int argc, char** argv) {
 
     return (EXIT_SUCCESS);
 }
+
+
 

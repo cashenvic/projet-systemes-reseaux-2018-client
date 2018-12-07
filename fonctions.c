@@ -34,12 +34,11 @@ void sendToServer(int socket, char *buffer) {
 }
 
 char * receiveFromServer(int socket, char *buffer, int n) {
-    char received[256];
     if ((n = recv(socket, buffer, sizeof buffer - 1, 0)) == -1) {
         perror("recv()");
         exit(-1);
-        return buffer;
     }
+    return buffer;
 }
 
 void lister_image(char *repertoire, chemin_de_fichier tab[10], int *taille) {
@@ -95,7 +94,6 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer) {
 }
 
 void receptionFichier(int socket, char *buffer) {
-    char* recu;
     while (read(socket, buffer, T_BUFF)) {
         //strcat(recu, &buffer);
         //printf("Reçu: rw%s", recu);
@@ -110,7 +108,7 @@ void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille
     switch (choix) {
         case 1: /*Choix de Structure vers Chaine de caractere*/
 
-            for (i; i < taille; i++) {
+            for (i = 0; i < taille; i++) {
                 sprintf(str, "%d", i);
                 strcat(p2, str);
                 strcat(p2, "|");
@@ -129,7 +127,7 @@ void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille
 
 void chaine_structure_Contenu(char chaine[], image images[10], int nbImg) {
     int i = 0;
-    for (i; i < nbImg; i++) {
+    for (i = 0; i < nbImg; i++) {
         strcat(chaine, images[i].nom_fichier);
         printf("nom image dans structure: %s\n", images[i].nom_fichier);
         strcat(chaine, ":");
@@ -141,12 +139,12 @@ void chaine_structure_Contenu(char chaine[], image images[10], int nbImg) {
 
 void convertir_image(int socket, char *cheminFichier, char *buffer) {
     FILE *fichier;
-    char ch;
-    int i = 0;
     char tampon[512];
-
-
-    if ((fichier = fopen(cheminFichier, "r")) == NULL) {
+    char repertoire[256] = "./images/";
+    //strcpy(repertoire, );
+    strcat(repertoire, cheminFichier);
+    printf("++++Le chemin du fichier %s", repertoire);
+    if ((fichier = fopen(repertoire, "r")) == NULL) {
         perror("fopen");
         exit(-1);
     }
@@ -154,7 +152,7 @@ void convertir_image(int socket, char *cheminFichier, char *buffer) {
 
     memset(tampon, '0', 512);
     int paquetEnv;
-    while (paquetEnv = fread(tampon, sizeof (char), 512, fichier) > 0) {
+    while ((paquetEnv = fread(tampon, sizeof (char), 512, fichier)) > 0) {
         send(socket, tampon, paquetEnv, 0);
         printf("packet envoyé\n");
         memset(tampon, '0', 512);
@@ -171,3 +169,5 @@ void affiche_aide() {
     printf("\tExemple: client 192.168.1.23 20000\n");
     exit(-1);
 }
+
+
