@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
     int i = 0, taille_liste_fichier;
     chemin_de_fichier chemins_images[20];
     chemin_de_fichier chemins_img_choisis[20]; //allocation dynamique plus bas si on connait le nombre d'image
-    image images[20]; //allocation dynamique plus bas si on connait le nombre d'image
+    //image images[20]; //allocation dynamique plus bas si on connait le nombre d'image
     char ch_to_send[800000];
     char buffer[T_BUFF];
     const char *hostname = "localhost"; // nom du serveur
@@ -61,23 +61,24 @@ int main(int argc, char** argv) {
             printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
             //construire un tableau avec les noms de fichier choisis
             if ((strcmp(chemins_images[choix].info, ".") == 0)
-                    && (strcmp(chemins_images[choix].info, "..") == 0)) {
+                    || (strcmp(chemins_images[choix].info, "..") == 0)) {
                 printf("Ce choix n'est pas valide");
             } else
                 strcpy(chemins_img_choisis[i].info, chemins_images[choix].info);
             i++;
         }
         i = 0;
+        //nombre de fichiers attendus coté serveur
+        write(socket_client, &nbre_images, sizeof (int));
         while (i < nbre_images) {
             convertir_image(socket_client, chemins_img_choisis[i].info, ch_to_send);
-            strcpy(images[i].nom_fichier, chemins_img_choisis[i].info);
-            strcpy(images[i].contenu_fichier, ch_to_send);
+            printf("%s a été envoyé\n\n", chemins_img_choisis[i].info);
             i++;
         }
-        strcpy(ch_to_send, "");
-        chaine_structure_Contenu(ch_to_send, images, nbre_images);
+        //strcpy(ch_to_send, "");
+        //chaine_structure_Contenu(ch_to_send, images, nbre_images);
         //envoiFichier(socket_client, ch_to_send, buffer);
-        printf("fichier envoyé: %s", ch_to_send);
+        //printf("fichier envoyé: %s", ch_to_send);
         //sendToServer(socket_client, ch_to_send);
     } else if (choix == 1) {
         printf("en attente d'un fichier\n");

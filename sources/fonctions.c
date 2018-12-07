@@ -141,27 +141,33 @@ void convertir_image(int socket, char *cheminFichier, char *buffer) {
     FILE *fichier;
     char tampon[512];
     char repertoire[256] = "./images/";
-    //strcpy(repertoire, );
+    int paquetEnv = 0;
+
     strcat(repertoire, cheminFichier);
-    printf("++++Le chemin du fichier %s", repertoire);
+    printf("++++Le chemin du fichier %s\n", repertoire);
     if ((fichier = fopen(repertoire, "r")) == NULL) {
         perror("fopen");
         exit(-1);
     }
-    printf("successfull opening of file %s\n", cheminFichier);
+
+    fseek(fichier, 0, SEEK_END);
+    int taille_image = ftell(fichier);
+    write(socket, &taille_image, sizeof (int)); //envoi de la taille du fichier
+
     strcpy(tampon, cheminFichier);
-    send(socket, tampon, strlen (tampon), 0);
+    send(socket, tampon, 128, 0); //envoi du nom de fichier
 
     memset(tampon, '0', 512);
-    int paquetEnv;
-    while ((paquetEnv = fread(tampon, sizeof (char), 512, fichier)) > 0) {
-        send(socket, tampon, paquetEnv, 0);
-        printf("packet envoyé\n");
+    fseek(fichier, 0, SEEK_SET);
+
+    int lu = 0;
+    while (paquetEnv < taille_image) {
+        lu = fread(tampon, sizeof (char), 512, fichier);
+        send(socket, tampon, 512, 0);
+        paquetEnv += lu;
         memset(tampon, '0', 512);
-        if (paquetEnv == 0 || paquetEnv != 512) {
-            break;
-        }
     }
+    printf("paquetRec = %d envoyés / %d\n", paquetEnv, taille_image);
 
     fclose(fichier);
 }
@@ -171,5 +177,3 @@ void affiche_aide() {
     printf("\tExemple: client 192.168.1.23 20000\n");
     exit(-1);
 }
-
-
