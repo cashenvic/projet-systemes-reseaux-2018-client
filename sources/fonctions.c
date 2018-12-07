@@ -149,6 +149,8 @@ void convertir_image(int socket, char *cheminFichier, char *buffer) {
         exit(-1);
     }
     printf("successfull opening of file %s\n", cheminFichier);
+    strcpy(tampon, cheminFichier);
+    send(socket, tampon, strlen (tampon), 0);
 
     memset(tampon, '0', 512);
     int paquetEnv;
