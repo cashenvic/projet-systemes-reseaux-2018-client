@@ -1,4 +1,4 @@
-#include "fonctions.h"
+#include "../headers/fonctions.h"
 
 int main(int argc, char** argv) {
     struct sockaddr_in server_add = {0}; // adresse du serveur

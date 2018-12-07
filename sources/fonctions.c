@@ -1,4 +1,4 @@
-#include "fonctions.h"
+#include "../headers/fonctions.h"
 
 int saisir(char message[], int nbr_choix) {
     int choix = -1;
