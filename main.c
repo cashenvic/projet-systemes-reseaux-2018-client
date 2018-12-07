@@ -69,7 +69,6 @@ int main(int argc, char** argv) {
         }
         i = 0;
         while (i < nbre_images) {
-            printf("Main:-->++++Le chemin du fichier %s", chemins_img_choisis[i].info);
             convertir_image(socket_client, chemins_img_choisis[i].info, ch_to_send);
             strcpy(images[i].nom_fichier, chemins_img_choisis[i].info);
             strcpy(images[i].contenu_fichier, ch_to_send);
