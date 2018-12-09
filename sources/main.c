@@ -79,7 +79,8 @@ int main(int argc, char** argv) {
                 i++;
             }
         } else if (choix == 1) {
-            printf("en attente d'un fichier\n");
+            printf("Liste des fichiers disponibles sur le serveur\n");
+             //
             receptionFichier(socket_client, buffer);
         } else if (choix == 0) {
             close(socket_client);

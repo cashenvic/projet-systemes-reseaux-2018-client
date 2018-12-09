@@ -97,5 +97,10 @@ void convertir_image(int socket, char *cheminFichier, char *buffer);
  **/
 void affiche_aide();
 
+/** @brief Visualiser une image 
+ *  @param char * image 
+ 
+ *  @return void
+ **/
+void visualiser_image(char* image);
 #endif /* FONCTIONS_H */
-

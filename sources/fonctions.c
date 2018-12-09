@@ -96,14 +96,111 @@ void envoiFichier(int socket, char *cheminFichier, char *buffer) {
     //ecrire dans la socket serveur
 }
 
-void receptionFichier(int socket, char *buffer) {
+/*void receptionFichier(int socket, char *buffer) {
     while (read(socket, buffer, T_BUFF)) {
         //strcat(recu, &buffer);
         //printf("Reçu: rw%s", recu);
         printf("Reçu: b%s", buffer);
     }
     //printf("Reçu r: %s", recu);
+}*/
+
+void receptionFichier(int socket, char *buffer) {
+
+        //reception de la liste des images a partir 
+        
+        //choix du Client
+        
+        //envoi choix du client au serveur
+
+        //reception des fichiers
+    char tampon[512];
+    FILE * fichier_recu = NULL;
+    chemin_de_fichier mes_images[20];
+    chemin_de_fichier images_choisies[20];
+    //image img;
+    //char ch;
+    char nomF[128], repertoire[128] = "./images/";
+    int nb_img_attendus = 0, taille_img_attendu = 0, paquetRec = 0;
+    int i = 0, choix = -1, taille_img_tab;
+
+    //recuperer la liste des images disponibles
+    recv(socket, mes_images, 2048, 0);
+    //recuperer la taille du tableau d'images
+    read(socket, &taille_img_tab, sizeof (int));
+    printf("Il y a %d fichiers sur le serveur\n", taille_img_tab);
+
+    while (i < taille_img_tab) {
+        printf("\n%d- %s \n", i, mes_images[i].info);
+        i++;
+    }
+
+    //choix du client
+    nb_img_attendus = saisir("Combien d'images voulez-vous télécharger?", taille_img_tab);
+    printf("Vous avez choisi d'envoyer %d images\n", choix);
+
+    //envoi du nombre de fichiers demandés
+    write(socket, &nb_img_attendus, sizeof (int));
+
+    i = 0;
+    while (i < nb_img_attendus) {
+        printf("\nImage n°%d\n", i + 1);
+        choix = saisir("Choisissez le fichier", taille_img_tab - 1);
+        printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, mes_images[choix].info);
+        strcpy(images_choisies[i].info, mes_images[choix].info);
+        i++;
+    }
+
+    //envoi choix du client au serveur
+    send(socket, images_choisies, 2048, 0);
+
+    /*if (nb_img_attendus > 0){*/
+
+    i = 0;
+    while (i < nb_img_attendus) {
+        printf("\n\nreception du %de fichier\n", i+1);
+        read(socket, &taille_img_attendu, sizeof (int)); //recuperer la taille du fichier
+        printf("taille attendue %d\n", taille_img_attendu);
+
+        strcpy(nomF, images_choisies[i].info);
+        
+        strcpy(repertoire, "./images/");
+        strcat(repertoire, nomF);
+        printf("son nom est %s\n", nomF);
+        //fichier_recu = fopen(repertoire, "w+");
+        if ((fichier_recu = fopen(repertoire, "w+")) == NULL) {
+            perror("fopen");
+            exit(-1);
+        }
+        int pa;
+        int lu = 0;
+        memset(tampon, '0', 512);
+
+        while (paquetRec < taille_img_attendu) {
+            recv(socket, tampon, 512, 0) > 0;
+            pa = fwrite(tampon, sizeof (char), 512, fichier_recu);
+            memset(tampon, '0', 512);
+            paquetRec += pa;
+        }
+        //compare_type(fichier_recu);
+        printf(" paquetRec = %d recus / %d envoyés\n", paquetRec, taille_img_attendu);
+
+        //liberation/reinitialisation des ressources
+        memset(tampon, '0', 512);
+        printf("fichier %s recu\n", nomF);
+        strcpy(nomF, "");
+        lu = 0;
+        paquetRec = 0;
+        taille_img_attendu = 0;
+        visualiser_image(repertoire);
+        i++;
+        fclose(fichier_recu);
+        fichier_recu = NULL;
+    }
 }
+//printf("Reçu: %s\n", recu);
+//doit appeler la verification d'iamges
+//}
 
 void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille, int choix) {
     int i = 0;
@@ -179,4 +276,23 @@ void affiche_aide() {
     printf("Usage: \nclient <nom du serveur> <numero port>\n");
     printf("\tExemple: client 192.168.1.23 20000\n");
     exit(-1);
+}
+
+void visualiser_image(char* image) {
+    char *com[3] = {"xdg-open", image, (char *) 0};
+    /* on forke le processus */
+    switch (fork()) {
+        case -1:
+            perror("fork erreur");
+            exit(-1);
+        case 0:
+            //comportement du fils
+            if (execvp("xdg-open", com) == -1) {
+                perror("execvp");
+                exit(0);
+            }
+        default:
+            while (wait(NULL) != -1);
+    }
+
 }
