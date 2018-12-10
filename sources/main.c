@@ -41,12 +41,14 @@ int main(int argc, char** argv) {
         exit(-1);
     }
     while (1) {
+        choix = -1;
         choix = menu_client();
         write(socket_client, &choix, sizeof (int));
         //sendToServer(socket_client, &choix);
         if (choix == 2) {
             choix = -1;
-            printf("envoi d'un fichier\n");
+            system("clear");
+            printf("Envoi d'un fichier\n");
             i = 0;
             lister_image("./images/", chemins_images, &taille_liste_fichier);
             //prompt choisir le nombre de fichiers à envoyer
@@ -58,7 +60,7 @@ int main(int argc, char** argv) {
             while (i < nbre_images) {
                 printf("\nImage n°%d\n", i + 1);
                 choix = saisir("Choisissez le fichier", taille_liste_fichier - 1);
-                printf("Choix n°%d: (image n°%d) %s\n", i + 1, choix, chemins_images[choix].info);
+                printf("Choix n°%d: (image n°%d) %s\n\n", i + 1, choix, chemins_images[choix].info);
                 //construire un tableau avec les noms de fichier choisis
                 if ((strcmp(chemins_images[choix].info, ".") == 0) || (strcmp(chemins_images[choix].info, "..") == 0)) {
                     printf("Choix d'image non valide. Le programme va quitter\n");
@@ -75,13 +77,15 @@ int main(int argc, char** argv) {
             write(socket_client, &nbre_images, sizeof (int));
             while (i < nbre_images) {
                 convertir_image(socket_client, chemins_img_choisis[i].info, ch_to_send);
-                printf("%s a été envoyé\n\n", chemins_img_choisis[i].info);
+                //printf("%s a été envoyé\n\n", chemins_img_choisis[i].info);
                 i++;
             }
         } else if (choix == 1) {
+            system("clear");
             printf("Liste des fichiers disponibles sur le serveur\n");
              //
             receptionFichier(socket_client, buffer);
+
         } else if (choix == 0) {
             close(socket_client);
             exit(EXIT_SUCCESS);

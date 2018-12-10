@@ -10,7 +10,7 @@ all: ./bin/client
 	gcc -c -Wall ./sources/fonctions.c -w -o ./bin/fonctions.o
 
 run: 
-	./bin/client localhost 20000
+	./bin/client localhost 2000
 
 clean:
 	rm -f ./bin/main.o ./bin/fonctions.o ./bin/client

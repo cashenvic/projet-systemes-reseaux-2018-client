@@ -90,30 +90,7 @@ FILE* ouvrirFichier(char *cheminFichier, char* mode) {
     return fichier;
 }
 
-void envoiFichier(int socket, char *cheminFichier, char *buffer) {
-    sendToServer(socket, buffer);
-
-    //ecrire dans la socket serveur
-}
-
-/*void receptionFichier(int socket, char *buffer) {
-    while (read(socket, buffer, T_BUFF)) {
-        //strcat(recu, &buffer);
-        //printf("Reçu: rw%s", recu);
-        printf("Reçu: b%s", buffer);
-    }
-    //printf("Reçu r: %s", recu);
-}*/
-
 void receptionFichier(int socket, char *buffer) {
-
-        //reception de la liste des images a partir 
-        
-        //choix du Client
-        
-        //envoi choix du client au serveur
-
-        //reception des fichiers
     char tampon[512];
     FILE * fichier_recu = NULL;
     chemin_de_fichier mes_images[20];
@@ -202,41 +179,6 @@ void receptionFichier(int socket, char *buffer) {
 //doit appeler la verification d'iamges
 //}
 
-void chaine_structure_liste(char p2[120], chemin_de_fichier tab [10], int taille, int choix) {
-    int i = 0;
-    char str[10];
-    switch (choix) {
-        case 1: /*Choix de Structure vers Chaine de caractere*/
-
-            for (i = 0; i < taille; i++) {
-                sprintf(str, "%d", i);
-                strcat(p2, str);
-                strcat(p2, "|");
-                strcat(p2, tab[i].info);
-                if (i < taille - 1)
-                    strcat(p2, ":");
-            }
-            break;
-        case 2: /*Choix de chaine de caractaire vers Structure*/
-
-            break;
-        default: printf("--erreur de choix !!\n");
-            break;
-    }
-}
-
-void chaine_structure_Contenu(char chaine[], image images[10], int nbImg) {
-    int i = 0;
-    for (i = 0; i < nbImg; i++) {
-        strcat(chaine, images[i].nom_fichier);
-        printf("nom image dans structure: %s\n", images[i].nom_fichier);
-        strcat(chaine, ":");
-        strcat(chaine, images[i].contenu_fichier);
-        if (i < nbImg - 1)
-            strcat(chaine, ":");
-    }
-}
-
 void convertir_image(int socket, char *cheminFichier, char *buffer) {
     FILE *fichier;
     char tampon[512];
@@ -244,7 +186,7 @@ void convertir_image(int socket, char *cheminFichier, char *buffer) {
     int paquetEnv = 0;
 
     strcat(repertoire, cheminFichier);
-    printf("++++Le chemin du fichier %s\n", repertoire);
+    //printf("++++Le chemin du fichier %s\n", repertoire);
     if ((fichier = fopen(repertoire, "r")) == NULL) {
         perror("fopen");
         exit(-1);
@@ -268,6 +210,14 @@ void convertir_image(int socket, char *cheminFichier, char *buffer) {
         memset(tampon, '0', 512);
     }
     printf("paquetRec = %d envoyés / %d\n", paquetEnv, taille_image);
+
+    int recevable = 0;
+    read(socket, &recevable, sizeof (int));
+    if (recevable < 0) { //l'image envoyée n'est pas recevable
+        printf("Le fichier envoyé (%s) n'etait pas recevable et a été supprimé\n\n", cheminFichier);
+    } else {//l'image est recevable
+        printf("Le fichier envoyé (%s) etait recevable et a été enregistré\n\n", cheminFichier);
+    }
 
     fclose(fichier);
 }
